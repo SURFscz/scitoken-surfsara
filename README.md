@@ -14,8 +14,13 @@ The SciToken library mimics/employs the example OAuth2 server's mixins to genera
 In the demo, there is a simple API to generate, validate, consume and revoke scitokens. The endpoints for the SciToken demo are shown in the `SciTokenAPI.yaml` file.
 
 ## Deployment
-Deployment of the demo and the Oauth2 server are done through containers.
+Deployment of the Oauth2 server is done through container. You first need to build it:
 
+```bash
+docker build -t oauth2server:latest -f Dockerfile_Oauth2Server .
+```
+
+And then run it:
 
 ```bash
 docker run --detach \
@@ -27,14 +32,20 @@ docker run --detach \
            oauth2server
 ```
 
-
 # Demo
+Here are the steps for running the Scitoken Web library demo.
+
+## Running 
+The Scitoken Web library demo is configured with the `app.py` file.
+
 Authentication screen authenticates the user.
+
+
 
 # TODOs
 1. Instead of `flask runner` employ WSGI 
-2. Write unit tests
-3. 
-
+2. Move to a proper storage (e.g. database)
+3. Write unit tests
+ 
 # References and Further Reading
 The Scitoken implementation is basedo on Sci
