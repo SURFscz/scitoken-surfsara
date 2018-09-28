@@ -53,7 +53,7 @@ class TokenManager():
 
 
   #TODO: The refresh tokens can also or be invalidated, we need to look at there : https://stackoverflow.com/questions/40555855/does-the-refresh-token-expire-and-if-so-when
-    def invalidateRefreshToken(self, refToken):
+    def revokeRefreshToken(self, refToken):
         print("IMPLEMENT THIS...")
         return True
 

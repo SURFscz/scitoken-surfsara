@@ -1,0 +1,151 @@
+openapi: 3.0.0
+info:
+  title: SciToken API
+  description: |
+    API definition for generating, verifying and consuming Scitokens
+  version: 0.1-beta
+
+#servers:
+#  - url: http://api.example.com/v1
+#    description: Optional server description, e.g. Main (production) server
+#  - url: http://staging-api.example.com
+#    description: Optional server description, e.g. Internal staging server for testing
+
+paths:
+  /oauth2RefreshToken:
+    post:
+      summary: |
+        Obtain user consent for the refresh token
+      description: |
+        The user is forwarded to consent screen for the requested resources
+      tags: 
+        - oauth2
+      requestBody:
+        required: true
+        content: 
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  description: |
+                    The registered client ID.
+                  type: string
+                client_secret:
+                  description: |
+                    The registered client ID secret.
+                  type: string
+                  format: password
+#                grant_type:
+#                  description: |
+#                    The authorization grant type, must be `authorization_code`.
+#                  type: string
+                scope:
+                  description: |
+                    The resource for which the refresh token will be requested
+                  type: string
+#                code:
+#                  description: >
+#                    The authorization code previously obtained from the
+#                    Authentication endpoint.
+#                  type: string
+#                redirect_uri:
+#                  description: >
+#                    The redirect URL that was used previously with the
+#                    Authentication endpoint.
+#                  type: string
+              required:
+                - client_id, client_secret, scope
+      responses:
+        '303':    # status code
+          description: |
+            Redirect to the consent screen for the requested resource
+    get:      
+      summary: |
+        The client is issued a refresh token
+      description: |
+        Obtain a refresh token after receiving an authorization token from the OAuth2 server
+      tags: 
+        - oauth2
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+          required: true
+          description: |
+            The authorization code to obtain a refresh token
+      responses:
+        '200':    # status code
+          description: A refresh token
+          content:
+            application/json:
+              schema: 
+                type: string
+  /scitokens:
+    post:
+      summary: |
+        Generate a scitoken
+      description: |
+        Given the refresh token, a Scitoken is generated.
+      tags: 
+        - scitoken
+      requestBody:
+        content: 
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                parent_token:
+                  description: |
+                    The parent token that will be used to generate
+                  type: string
+                refresh_token:
+                  description: |
+                    The refresh token to be used (i.e. validated) for generating the scitoken
+                  type: string
+      responses:
+        '200':    # status code
+          description: A scitoken
+          content:
+            application/json:
+              schema: 
+                type: string
+  /resource:
+    get:
+      summary: |
+        Access to a resource
+      description: |
+        Given the scitoken, the access to a sensitive resource is checked.
+      tags: 
+        - scitoken
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          required: true
+          description: |
+            The scitoken used to access to the resource 
+        - in: query
+          name: act
+          schema:
+            type: string
+          required: true
+          description: |
+            The action to be performed (whether it is contained in the available claims of the scitoken)
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: |
+            The ID of the resource
+      responses:
+        '200':    # status code
+          description: A scitoken
+          content:
+            application/json:
+              schema: 
+                type: boolean
+      

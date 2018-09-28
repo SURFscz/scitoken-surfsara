@@ -26,9 +26,12 @@ def index():
     return "<h2>Welcome to SciToken Demo</h2>"
 
 
-
 @scitoken_bp.route('/oauth2RefreshToken', methods=['GET', 'POST'])
 def generateOAuth2():
+    '''
+    :return: If http_method = POST : forwards to consent screen
+                http_method = GET : obtains the refresh token
+    '''
     # TODO: The below call needs to be modified when the Scitoken code supports refresh tokens...
     # TODO: For the time being I employ OAuth2..
     if request.method == 'POST' :
@@ -38,7 +41,8 @@ def generateOAuth2():
     else :
         oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
         token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
-        return json.dumps(token['refresh_token'])
+        refresh_token = json.dumps(token['refresh_token'])
+        return refresh_token
        # return redirect(url_for('scitoken.refreshTokenForm', refresh_token=str(token['refresh_token'])))
 
 
