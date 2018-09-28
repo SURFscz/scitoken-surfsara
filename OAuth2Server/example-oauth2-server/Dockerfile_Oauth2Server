@@ -1,0 +1,23 @@
+FROM python:3
+
+# If more labels are needed, don't use multiple LABEL statements. Instead extend this one
+LABEL maintainer="Fatih Turkmen <turkmenf@gmail.com>"
+
+# Add other directives here, for example RUN, COPY, CMD or ENTRYPOINT
+COPY . /source
+WORKDIR /source
+
+RUN apt-get update && \
+    apt-get install -y libxmlsec1-dev && \
+    pip install -r requirements.txt && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    flask initdb 
+ 
+# Be careful setting this to true since this enables the OAuth2 server to work 
+# with HTTP (instead of HTTPS) which is something you may not want in production. 
+ENV AUTHLIB_INSECURE_TRANSPORT=false 
+
+EXPOSE 4005
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=4005", "--cert", "$X509_CERT_BASE64", "--key", "$X509_KEY_BASE64"]
