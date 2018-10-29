@@ -1,47 +1,74 @@
 from flask import (
-    Blueprint, request, Response, redirect, url_for, session
+    Blueprint, request, Response, redirect, session
 )
 import SciTokenClass
 import json
-from authlib.client import OAuth2Session
+from scitoken.oauth2 import get_client
 
+from scitoken.models import OAuth2RefreshToken, db, User
 
-scitokenins = SciTokenClass.SciTokenClass(1)
-scitokenTM = SciTokenClass.TokenManager()
+scitokenins = SciTokenClass(1)
+scitokenTM = TokenManager()
 
 scitoken_bp = Blueprint('scitoken', __name__)
 
 
-OAUTH2_CONSENT_URL = 'https://127.0.0.1:4005/oauth/authorize'
-OAUTH2_REFTOKEN_URL = 'https://127.0.0.1:4005/oauth/token'
 
-client_id='ajWMmlg5AJmmBYUvsaiAov4i'
-client_secret='pnPuBacJPRNZ2CVDmorORqwPwTp17a8HZXfMsRdI88J9dckS'
-scope = 'profile'
-
-
-@scitoken_bp.route('/', methods=['GET'])
 @scitoken_bp.route('/hello', methods=['GET'])
 def index():
     return "<h2>Welcome to SciToken Demo</h2>"
 
 
+@scitoken_bp.route('/', methods=['GET'])
+# This code has been taken from here : https://github.com/authlib/example-oauth2-server
+def home():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            user = User(username=username)
+            db.session.add(user)
+            db.session.commit()
+        session['id'] = user.id
+        return redirect('/')
+    user = current_user()
+    if user:
+        clients = OAuth2Client.query.filter_by(user_id=user.id).all()
+    else:
+        clients = []
+    return render_template('home.html', user=user, clients=clients)
+
+
+@scitoken_bp.route('/create_oauth2_client', methods=['GET', 'POST'])
+def creteOAuth2client():
+    return None
+
+
 @scitoken_bp.route('/oauth2RefreshToken', methods=['GET', 'POST'])
 def generateOAuth2():
     '''
-    :return: If http_method = POST : forwards to consent screen
-                http_method = GET : obtains the refresh token
+    This endpoint follows the Authorization Code flow of OAuth2 to obtain a refresh token.
+    Parameters : See the YAML file for more details
+    :parameter:  str oauth2ClientName : The client identifier ('local', 'twitter',...)
+             for the particular OAuth2 provider
+             If POST : OAuth2 service name , user id
+             If GET :  redirect_uri, authorization code
+    :return: If POST : forwards to consent/login screen
+             If GET : obtains the refresh token
     '''
-    # TODO: The below call needs to be modified when the Scitoken code supports refresh tokens...
-    # TODO: For the time being I employ OAuth2..
-    if request.method == 'POST' :
-        oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
-        uri, state = oAuthsession.authorization_url(OAUTH2_CONSENT_URL) #,redirect_uri=url_for('scitoken.generateOAuth2')
+    if request.method == 'GET' : #Consent/authorization screen for the user
+        client = get_client(request.form['oauth2ClientName'])
+        uri, state = client.generate_authorize_redirect()
         return redirect(uri, code=303)
     else :
-        oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
-        token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
+        #oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
+        #token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
+        client = get_client(request.form['oauth2ClientName'])
+        token = client.fetch_access_token(request.form['redirect_uri'], code=request.form['code'])
         refresh_token = json.dumps(token['refresh_token'])
+        rtoken = OAuth2RefreshToken(session['userid'], refresh_token)
+        db.session.add(rtoken)
+        db.session.commit()
         return refresh_token
        # return redirect(url_for('scitoken.refreshTokenForm', refresh_token=str(token['refresh_token'])))
 

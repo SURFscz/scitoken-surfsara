@@ -4,7 +4,6 @@ import requests
 from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from authlib.client import OAuth2Session
 
 
 # NOTES
@@ -104,8 +103,8 @@ class SciTokenClass():
         '''
         A validator that accepts any value. --> TODO: Taken from the Scitoken repo, needs to be updated...
         '''
-            if value or not value:
-                return True
+        if value or not value:
+           return True
 
 
 
@@ -157,7 +156,7 @@ class SciTokenClass():
         # call the generate scripts
         p = subprocess.Popen('generate_keys.sh '+key_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print line,
+            print(line)
         #retval = p.wait()
 
 

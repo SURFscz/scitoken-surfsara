@@ -11,6 +11,7 @@ app = create_app({
 })
 
 
+
 @app.cli.command()
 def initdb():
     from scitoken.models import db
