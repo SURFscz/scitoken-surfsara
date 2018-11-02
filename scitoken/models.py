@@ -1,7 +1,7 @@
 #Created by Fatih Turkmen (fatih.turkmen@surfsara.nl) on 07/06/2018
 import time
 from flask_sqlalchemy import SQLAlchemy
-from authlib.flask.oauth2.sqla import OAuth2TokenMixin
+from authlib.flask.oauth2.sqla import OAuth2TokenMixin, OAuth2ClientMixin
 
 
 db = SQLAlchemy()
@@ -31,3 +31,12 @@ class OAuth2RefreshToken(db.Model, OAuth2TokenMixin):
     def is_refresh_token_expired(self):
         expires_at = self.issued_at + self.expires_in * 2
         return expires_at < time.time()
+
+
+class OAuth2Client(db.Model, OAuth2ClientMixin):
+    __tablename__ = 'oauth2_client'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    user = db.relationship('User')

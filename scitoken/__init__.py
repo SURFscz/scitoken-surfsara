@@ -4,6 +4,7 @@ from flask import Flask,render_template
 import os
 from scitoken.views import scitoken_bp
 from scitoken.models import db
+from scitoken.oauth2 import oauth
 
 def page_not_found(e):
   return render_template('404.html'), 404
@@ -20,7 +21,6 @@ def create_app(config=None):
             app.config.update(config)
         elif config.endswith('.py'):
             app.config.from_pyfile(config)
-
     # ensure the instance folder exists, the perfect place to drop things that either change at
     # runtime or configuration files
     try:
@@ -28,20 +28,11 @@ def create_app(config=None):
     except OSError:
         pass
 
-    # TODO : Investigate the use of clients...
-    #oauth = OAuth()
-    #oauth.init_app(app)
-    #scitokenOAuthSrv = oauth.register('scitokenOAuthSrv',
-    #                         client_id='lQ0IRkX4UvcmfKftr2A6F2ay',
-    #                         client_secret='QW7tVHlTAHTVkBijrDsrNnEIWRXpCpDP2m5pF3baU0HWFVGG',
-    #                         access_token_url='https://127.0.0.1:4005/oauth/token',
-    #                         authorize_url='https://127.0.0.1/oauth/authorize'
-    #                         )
-
     setup_app(app)
     return app
 
 
 def setup_app(app):
     db.init_app(app)
+    oauth.init_app(app)
     app.register_blueprint(scitoken_bp)

@@ -120,7 +120,7 @@ class SciTokenClass():
         @return:
         '''
         payload = {'refresh_token': refresh_token}
-        r = requests.post(self.VALIDATE_REFTOKEN_URL, data=payload)
+        r = requests.post(self.VALIDATE_REFTOKEN_URL, data=payload, verify=False)
         if r.json()['result']:
             token = scitokens.SciToken(key=self._private_key, parent=parent_token)
             serialized_token = token.serialize(issuer = 'local')

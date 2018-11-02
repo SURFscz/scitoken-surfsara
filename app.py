@@ -5,9 +5,9 @@ from scitoken import create_app
 
 
 app = create_app({
-    'SECRET_KEY': 'my_application_secret_key',
+    'SECRET_KEY': 'secret',
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///db.sqlite',
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///db.sqlite'
 })
 
 

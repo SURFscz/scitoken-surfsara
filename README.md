@@ -58,9 +58,13 @@ Authentication screen authenticates the user.
 
 
 # TODOs
-1. Instead of `flask runner` employ WSGI 
-2. Move to a proper storage (e.g. database)
-3. Write unit tests
+
+
+- [ ] 1. The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has expires_in etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
+- [ ] 2. Instead of `flask run` employ WSGI 
+- [ ] 3. Move to a proper storage (e.g. database) from SQLAlchemy local data store
+- [ ] 4. Write unit tests
+- [ ] 5. Solve the issue of fav icon.
  
 # References and Further Reading
-The Scitoken implementation is basedo on Sci
+The Scitoken implementation is based on Authlib.
