@@ -1,19 +1,30 @@
 from authlib.flask.oauth2 import current_token
 from flask import (
-    Blueprint, request, Response, redirect, session, render_template, url_for, current_app)
+    Blueprint, request, Response, redirect, session, render_template, url_for, jsonify)
 
 import json
-from scitoken.SciTokenClass import SciTokenClass, TokenManager
+from scitoken.SciTokenServer import SciTokenServer, TokenManager, SciTokenEnforcer
 from scitoken.oauth2 import get_client
-from scitoken.models import OAuth2RefreshToken, db, User, OAuth2Client
+from scitoken.models import db, User, OAuth2Client
+from scitoken.resource import require_oauth
 
-scitokenins = SciTokenClass(1)
+
+
+
+# TODO : Give thoughts about making these thread safe
+scitokenSrv = SciTokenServer(keygen_method=1, ref_token_url='https://127.0.0.1:4005/oauth/ref_token_validate')
+scitokenEnf = SciTokenEnforcer()
 scitokenTM = TokenManager()
 
 scitoken_bp = Blueprint('scitoken', __name__)
+scitoken_bp_tm = Blueprint('scitokentm', __name__)
 
 
-@scitoken_bp.route('/oauth2RefreshToken', methods=['GET', 'POST'])
+
+##########################################
+#####       TOKEN MANAGER
+##########################################
+@scitoken_bp_tm.route('/oauth2RefreshToken', methods=['GET', 'POST'])
 def generateOAuth2():
     '''
     This endpoint follows the Authorization Code flow of OAuth2 to obtain a refresh token.
@@ -44,26 +55,40 @@ def generateOAuth2():
     session.pop('consent')    #del session['consent']
     authz_code = request.form['code'] if request.method == 'POST' else request.args.get('code')
     # this calls /auth/token
-    #oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
-    #token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
+    # oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
+    # token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
     client = get_client(session['oauth2_srvname'])
     token = client.fetch_access_token(session['redirect_uri'], code=authz_code, verify=False) #TODO verify=True for certificate validation
-    refresh_token = json.dumps(token['refresh_token'])
-    rtoken = OAuth2RefreshToken(user_id=User.query.filter_by(username=session['username']).first().id)
-    rtoken.refresh_token = refresh_token
-    rtoken.scope = json.dumps(token['scope'])
-    rtoken.access_token = json.dumps(token['access_token'])
-    rtoken.expires_in = json.dumps(token['expires_in'])
-    db.session.add(rtoken)
-    db.session.commit()
-    return refresh_token
+    return scitokenTM.addRefreshToken(session['username'],refresh_token=json.dumps(token['refresh_token']),
+                                                          scope=json.dumps(token['scope']),
+                                                          access_token=json.dumps(token['access_token']),
+                                                          expires_in=json.dumps(token['expires_in']))
     # return redirect(url_for('scitoken.refreshTokenForm', refresh_token=str(token['refresh_token'])))
 
 
 
+    # The client send a POST request with:
+    # "grant_type" : "refresh_token"
+    # "refresh_token" : the original refresh token
+    # "client_id" : the ID of the client
+    # "client_secret" : client's secret
+    # "scope" :  A space-delimited list of requested scope permissions
+    # def generateSciRefreshToken(self, refresh_token, client_id, client_secret, scope, authz_code, id_token=None):
+    #     session = OAuth2Session(client_id, client_secret, scope=scope)
+    #     r_token = scitokens.generate("refresh_token", refresh_token, client_id, client_secret, scope)
+    #     access_token_url = 'https://127.0.0.1:4005/oauth/token'
+    #     token = session.fetch_access_token(access_token_url, code=authz_code)
+    #     return token['refresh_token']
+
+
+
+
+##########################################
+#####       SCITOKEN SERVER
+##########################################
 @scitoken_bp.route('/scitokens', methods=['POST'])
 def generateAccessSciToken():
-    token = scitokenins.generateAccessSciToken(request.form.get('parent_token', None), request.form.get('refresh_token', None))
+    token = scitokenSrv.generate_scitoken(request.form.get('parent_token', None), request.form.get('refresh_token', None))
     #return Response('<p>' + str(token.serialize(issuer='local')) + '</p>')
     return token.serialize(issuer='local')
     #return token.serialize(issuer = "local")
@@ -71,14 +96,14 @@ def generateAccessSciToken():
 
 @scitoken_bp.route('/resource', methods=['GET'])
 def verifyToken(token, action, resource, issuer):
-    scitokenins.generateEnforcer()
-    return scitokenins.verifyToken(request.args.get('token'), request.args.get('act'),request.args.get('id'))
+    scitokenEnf.generateEnforcer()
+    return scitokenEnf.enforceToken(request.args.get('token'), request.args.get('act'), request.args.get('id'))
 
 
 
 @scitoken_bp.route('/scitokensval', methods=['POST'])
 def validateToken():
-    return scitokenins.validate_token(request.form.get('token'))
+    return scitokenSrv.validate_token(request.form.get('token'))
 
 
 
@@ -91,13 +116,12 @@ def page_not_found(e):
 
 
 
-
-
 @scitoken_bp.route('/api/me')
 @require_oauth('profile')
 def api_me():
     user = current_token.user
     return jsonify(id=user.id, username=user.username)
+
 
 
 ######################
@@ -148,34 +172,42 @@ def createOAuth2client():
 
 
 
+# @scitoken_bp_tm.route('/oauth2Form', methods=['GET'])
+# def codeForm():
+#     return Response('''
+#         <form action="'''
+#            + 'http://127.0.0.1:4006' + url_for('.generateOAuth2') +
+#         '''" method="post">
+#             <p><input type=text name=username value="aliveli">
+#             <p><select name="oauth2_srvname">
+#                     <option selected="selected">Local</option>
+#                     <option>Twitter (Not working)</option>
+#                 </select></p>
+#             <p><input type=text name=redirect_uri value="'''
+#            + 'http://127.0.0.1:4006' + url_for('.generateOAuth2') +
+#         '''">
+#             <p><input type=text name=authz_code value="">
+#             <p><input type=submit value=submit>
+#         </form>
+#     ''')
+
+
+
+# @scitoken_bp.route('/scitokenForm', methods=['GET'])
+# def refreshTokenForm():
+#     return Response('''
+#         <form action="'''
+#         + 'http://127.0.0.1:4006' + url_for('.generateAccessSciToken') +
+#         '''" method="post">
+#             <p><input type=text name=refresh_token value="">
+#             <p><input type=submit value=submit>
+#         </form>
+#     ''')
+
 @scitoken_bp.route('/oauth2Form', methods=['GET'])
-def codeForm():
-    return Response('''
-        <form action="'''
-           + 'http://127.0.0.1:4006' + url_for('.generateOAuth2') +
-        '''" method="post">
-            <p><input type=text name=username value="aliveli">
-            <p><select name="oauth2_srvname">
-                    <option selected="selected">Local</option>
-                    <option>Twitter (Not working)</option>
-                </select></p>
-            <p><input type=text name=redirect_uri value="'''
-           + 'http://127.0.0.1:4006' + url_for('.generateOAuth2') +
-        '''">
-            <p><input type=text name=authz_code value="">
-            <p><input type=submit value=submit>
-        </form>
-    ''')
-
-
+def refresh_token_form():
+    return render_template('refresh_token_form.html')
 
 @scitoken_bp.route('/scitokenForm', methods=['GET'])
-def refreshTokenForm():
-    return Response('''
-        <form action="'''
-        + 'http://127.0.0.1:4006' + url_for('.generateAccessSciToken') +
-        '''" method="post">
-            <p><input type=text name=refresh_token value="">
-            <p><input type=submit value=submit>
-        </form>
-    ''')
+def scitoken_form():
+    return render_template('scitoken_form.html')

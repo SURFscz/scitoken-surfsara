@@ -2,7 +2,7 @@
 
 from flask import Flask,render_template
 import os
-from scitoken.views import scitoken_bp
+from scitoken.viewsSciToken import scitoken_bp, scitoken_bp_tm
 from scitoken.models import db
 from scitoken.oauth2 import oauth
 
@@ -36,3 +36,4 @@ def setup_app(app):
     db.init_app(app)
     oauth.init_app(app)
     app.register_blueprint(scitoken_bp)
+    app.register_blueprint(scitoken_bp_tm)

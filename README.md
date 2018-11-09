@@ -58,13 +58,21 @@ Authentication screen authenticates the user.
 
 
 # TODOs
-
-
-- [ ] 1. The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has expires_in etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
-- [ ] 2. Instead of `flask run` employ WSGI 
-- [ ] 3. Move to a proper storage (e.g. database) from SQLAlchemy local data store
-- [ ] 4. Write unit tests
-- [ ] 5. Solve the issue of fav icon.
+- [ ] Implement Validator, Verifier and Enforcer for scitoken. 
+- [ ] Example URL resource to be protected by the scitoken.
+- [ ] The revocation of refresh tokens and scitokens
+- [ ] The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has expires_in etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
+- [ ] Instead of `flask run` employ WSGI 
+- [ ] Implement a decorator like `require_auth` of Oauth2 example implementation for Scitokens.
+- [ ] A proper storage (e.g. database) from SQLAlchemy local data store
+- [ ] Unit tests
+- [ ] The issue of fav icon.
+ 
+ 
+# Test Cases
+- [ ] The mixins, ORMs and so on are working for storing the tokens?
+- [ ] The decorated resource is protected?
+- [ ] The cases of revoked scitoken and/or refresh tokens work?  
  
 # References and Further Reading
 The Scitoken implementation is based on Authlib.
