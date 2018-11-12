@@ -5,6 +5,7 @@ import os
 from scitoken.viewsSciToken import scitoken_bp, scitoken_bp_tm
 from scitoken.models import db
 from scitoken.oauth2 import oauth
+from flask_login import LoginManager
 
 def page_not_found(e):
   return render_template('404.html'), 404
@@ -35,5 +36,8 @@ def create_app(config=None):
 def setup_app(app):
     db.init_app(app)
     oauth.init_app(app)
+    login_manager = LoginManager()
+    login_manager.login_view = "login"
+    login_manager.init_app(app)
     app.register_blueprint(scitoken_bp)
     app.register_blueprint(scitoken_bp_tm)

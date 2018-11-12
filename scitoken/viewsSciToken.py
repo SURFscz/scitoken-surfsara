@@ -82,7 +82,6 @@ def generateOAuth2():
 
 
 
-
 ##########################################
 #####       SCITOKEN SERVER
 ##########################################
@@ -104,8 +103,6 @@ def verifyToken(token, action, resource, issuer):
 @scitoken_bp.route('/scitokensval', methods=['POST'])
 def validateToken():
     return scitokenSrv.validate_token(request.form.get('token'))
-
-
 
 
 

@@ -11,6 +11,7 @@ db = SQLAlchemy()
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40), unique=True)
+    password = db.Column(db.String(40), unique=True)  # TODO : This will be the hash of the password...
 
     def __str__(self):
         return self.username
