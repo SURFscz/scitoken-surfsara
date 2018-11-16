@@ -1,3 +1,4 @@
 Flask
 scitokens
 Authlib
+Flask-Login

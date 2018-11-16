@@ -51,7 +51,13 @@ docker run --detach \
 Here are the steps for running the Scitoken Web library demo.
 
 ## Running 
-The Scitoken Web library demo is configured with the `app.py` file.
+The Scitoken Web library demo is configured with the `app.py` file. 
+
+### Notes On Running
+Here are several notes that could be important to keep in mind:
+
+* The sessions in flask (not the extensions) are cookie-based which, IMO, makes the development more difficult. That said, it also makes the production/deployment easy along with possible additional benefits. In order to run the scitoken code together with Oauth2 server locally, I needed to set a different `SESSION_COOKIE_NAME` for each application. See `app.py` for both. This is irrelevant if both servers are run on different domains.
+
 
 Authentication screen authenticates the user.
 

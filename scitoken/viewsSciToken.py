@@ -30,11 +30,11 @@ def generateOAuth2():
     This endpoint follows the Authorization Code flow of OAuth2 to obtain a refresh token.
     The OAuth2 server should be provided this endpoint for the call back during client registration
     Note : See the YAML file for more details
-    :parameter:  str userid :  The identifier for the user for which the refresh token will be created.
-    :parameter:  str oauth2_srvname :  Name of the particular OAuth2 service (e.g. "Local", "Twitter") to
+    :param:  str userid :  The identifier for the user for which the refresh token will be created.
+    :param:  str oauth2_srvname :  Name of the particular OAuth2 service (e.g. "Local", "Twitter") to
                                       identify the client.
-    :parameter:  str redirect_uri : : Callback URI for the OAuth2 client, given during registration.
-    :parameter:  str authz_code : : Authorization code returned by the OAuth2 server after the user consent.
+    :param:  str redirect_uri : Callback URI for the OAuth2 client, given during registration.
+    :param:  str authz_code : Authorization code returned by the OAuth2 server after the user consent.
     :return: Refresh token
     :rtype: str
     '''
@@ -44,22 +44,26 @@ def generateOAuth2():
             session['username'] = request.args.get('username')
             session['redirect_uri'] = request.args.get('redirect_uri')
             session['oauth2_srvname'] = request.args.get('oauth2_srvname')
+            session['state'] = None if 'state' in request.args else request.args.get('state')
         elif request.method == 'POST':
             session['username'] = request.form['username']
             session['redirect_uri'] = request.form['redirect_uri']
             session['oauth2_srvname'] = request.form['oauth2_srvname']
+            session['state'] = request.form.get('state', None)
         client = get_client(session['oauth2_srvname'])
         uri, state = client.generate_authorize_redirect(session['redirect_uri'])
         uri = uri + '&username='+session['username']
         return redirect(uri, code=303)
-    session.pop('consent')    #del session['consent']
-    authz_code = request.form['code'] if request.method == 'POST' else request.args.get('code')
-    # this calls /auth/token
-    # oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
-    # token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
-    client = get_client(session['oauth2_srvname'])
-    token = client.fetch_access_token(session['redirect_uri'], code=authz_code, verify=False) #TODO verify=True for certificate validation
-    return scitokenTM.addRefreshToken(session['username'],refresh_token=json.dumps(token['refresh_token']),
+    else:
+        session.pop('consent')  # del session['consent']
+        authz_code = request.form['code'] if request.method == 'POST' else request.args.get('code')
+        # this calls /auth/token
+        # oAuthsession = OAuth2Session(client_id=client_id, client_secret=client_secret, scope=scope)
+        # token = oAuthsession.fetch_access_token(OAUTH2_REFTOKEN_URL, code=request.args.get('code'))
+        client = get_client(session['oauth2_srvname'])
+        token = client.fetch_access_token(session['redirect_uri'], code=authz_code,
+                                          state=session['state'], verify=False) #TODO verify=True for certificate validation
+        return scitokenTM.addRefreshToken(session['username'],refresh_token=json.dumps(token['refresh_token']),
                                                           scope=json.dumps(token['scope']),
                                                           access_token=json.dumps(token['access_token']),
                                                           expires_in=json.dumps(token['expires_in']))
@@ -87,6 +91,12 @@ def generateOAuth2():
 ##########################################
 @scitoken_bp.route('/scitokens', methods=['POST'])
 def generateAccessSciToken():
+    '''
+    :param: str paren_token : Parent token for the scitoken to be generated
+    :param: str refresh_token : Refresh token that will be validated/used to obtain a refresh token
+    :return:  scitoken
+    :rtype: str
+    '''
     token = scitokenSrv.generate_scitoken(request.form.get('parent_token', None), request.form.get('refresh_token', None))
     #return Response('<p>' + str(token.serialize(issuer='local')) + '</p>')
     return token.serialize(issuer='local')

@@ -2,12 +2,13 @@
 #Copyright SurfSara BV
 
 from scitoken import create_app
-
+import os
 
 app = create_app({
     'SECRET_KEY': 'secret',
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///db.sqlite'
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///db.sqlite',
+    'SESSION_COOKIE_NAME': 'scitoken'
 })
 
 

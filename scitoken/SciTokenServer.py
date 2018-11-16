@@ -102,9 +102,9 @@ class SciTokenServer():
 
     def generate_scitoken(self, parent_token = None, refresh_token = None, claims = None):
         '''
-        @param parent_token: The parent token for the new SciToken.
-        @param refresh_token: The refresh token that will be used to generate the Scitoken
-        @return: Scitoken
+        :param parent_token: The parent token for the new SciToken.
+        :param refresh_token: The refresh token that will be used to generate the Scitoken
+        :return: Scitoken
         '''
         # TODO : Python implementation does not support parent tokens (i.e. hierarchies) yet.
         payload = {'refresh_token': refresh_token}
