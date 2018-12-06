@@ -13,7 +13,13 @@ app = create_app({
 
 
 
-@app.cli.command()
+@app.cli.command('initdb')
 def initdb():
     from scitoken.models import db
     db.create_all()
+
+
+@app.cli.command('dropdb')
+def dropdb():
+    from scitoken.models import db
+    db.drop_all()

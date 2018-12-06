@@ -44,14 +44,14 @@ class TokenManager():
         :param expires_in:
         :return:
         '''
-        rtoken = OAuth2RefreshToken(user_id=User.query.filter_by(username=username).first().id)
+        rtoken = OAuth2RefreshToken(user_id=User.query.filter_by(username=username).first().username)
         rtoken.refresh_token = refresh_token
         rtoken.scope = scope
         rtoken.access_token = access_token
         rtoken.expires_in = expires_in
         db.session.add(rtoken)
         db.session.commit()
-        return rtoken.refresh_token
+
 
 
   #TODO: The refresh tokens can also or be invalidated, we need to look at there : https://stackoverflow.com/questions/40555855/does-the-refresh-token-expire-and-if-so-when
@@ -65,16 +65,21 @@ class TokenManager():
 class SciTokenServer():
 
     # NOTE: The ideas behind the separate Validator in this library is taken from libmacaroons.
-    def __init__(self, keygen_method, ref_token_url, iss='local'):
+    def __init__(self, keygen_method, ref_token_url, issuer='https://localhost'):
         '''
         :param keygen_method: The key generation method that will be used.
         '''
         self.VALIDATE_REFTOKEN_URL = ref_token_url
         if keygen_method == 1:
             self._private_key = self._genKeyPairWithCryptLib()
+            self.public_key_pem = self._private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
         elif keygen_method == 2: #TODO : To be implemented
             self._private_key = self._genKeyPairWithOpenSSL(file)
-        self.issuer = iss
+            self.public_key_pem = None
+        self.issuer = issuer
 
 
 
@@ -114,14 +119,15 @@ class SciTokenServer():
             # but it does not generate a private key and results with MissingKeyException
             # token=scitokens.SciToken()
             token = scitokens.SciToken(key=self._private_key, parent=parent_token)
-            token.update_claims(claims)
-            serialized_token = token.serialize(issuer = 'local')
-            print(serialized_token)
+            if claims is not None :
+                token.update_claims(claims)
             return token
         else:
             return None
 
 
+    def deserialize(self, serializedtoken):
+        return scitokens.SciToken.deserialize(serialized_token= serializedtoken, public_key=self.public_key_pem)
 
     def revoke_scitoken(self,token):
         # TODO : TO BE IMPLEMENTED
@@ -136,11 +142,17 @@ class SciTokenEnforcer():
     def __init__(self):
         pass
 
-    def enforceToken(self, token, action, resource):
-        serialized_token = token.serialize(issuer="local")
-        token = scitokens.SciToken.deserialize(serialized_token, public_key=self._public_pem, insecure=True)
+
+    def enforceToken(self, token, action, resource, public_pem):
+        #serialized_token = token.serialize(issuer="local")
+        try:
+            stoken = scitokens.SciToken.deserialize(token, public_key=public_pem, insecure=True)
+            return self.enf.test(stoken, action, resource)
+        except:
+            return False
+
         # test whether the token holder is allowed to
-        return self.enf.test(token, action, resource)
+
 
 
     ###########################
@@ -158,8 +170,9 @@ class SciTokenEnforcer():
         :return: An enforcer object for the specified issuer.
         '''
         self.enf = scitokens.Enforcer(issuer=issuer, audience=aud)
-        for claim, validator in validators:
-            self.enf.add_validator(claim, validator)
+        if validators is not None:
+            for claim, validator in validators:
+                self.enf.add_validator(claim, validator)
         return self.enf
 
 

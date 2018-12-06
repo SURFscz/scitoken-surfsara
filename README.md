@@ -64,15 +64,19 @@ Authentication screen authenticates the user.
 
 
 # TODOs
+- [ ] Solve the misconfiguration of `logout` method between Scitoken library and OAuth2 server 
 - [ ] Implement Validator, Verifier and Enforcer for scitoken. 
 - [ ] Example URL resource to be protected by the scitoken.
 - [ ] The revocation of refresh tokens and scitokens
+- [ ] Certificate validation during refresh token fetch (`verify=True` for certificate validation in ***generateOAuth2()*** method)
 - [ ] The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has expires_in etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
 - [ ] Instead of `flask run` employ WSGI 
 - [ ] Implement a decorator like `require_auth` of Oauth2 example implementation for Scitokens.
 - [ ] A proper storage (e.g. database) from SQLAlchemy local data store
 - [ ] Unit tests
 - [ ] The issue of fav icon.
+- [ ] Employ WTF forms for the demo
+- [ ] Give thoughts about making these thread safe
  
  
 # Test Cases

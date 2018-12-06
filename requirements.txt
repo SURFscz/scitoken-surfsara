@@ -2,3 +2,4 @@ Flask
 scitokens
 Authlib
 Flask-Login
+Flask-Bcrypt
