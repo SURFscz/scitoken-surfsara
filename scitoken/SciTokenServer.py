@@ -9,7 +9,7 @@ from scitoken.models import OAuth2RefreshToken, User, db
 
 
 # NOTES
-# The flow is the following:
+# The normal flow is the following:
 # 1. You generate a base token with generateBaseSciToken() which
 #    will generate a Scitoken after generating a private key
 # 2. Then generate a normal token by using the relevant base token.
@@ -32,17 +32,24 @@ from scitoken.models import OAuth2RefreshToken, User, db
 
 
 class TokenManager():
+    '''
+    This class is basically storage facility for refresh tokens and so on, i.e. facilities for the
+    scitoken use...
+    '''
 
     # TODO : Check the Scitoken implementation in the coming months to see their RefreshToken feature is implemented
-    # Note: There are different views: refresh tokens never expire or they have an expiry time/date...
+    # TODO : There are different views: refresh tokens never expire or they have an expiry time/date...
     def addRefreshToken(self, username, refresh_token, scope=None,access_token=None,expires_in = None):
-        '''
-        :param username:
-        :param refresh_token:
-        :param scope:
-        :param access_token:
-        :param expires_in:
-        :return:
+        ''' This method adds a refresh token to the DB
+
+        :param username: The identifier for the user.
+        :param refresh_token: Refresh token
+
+        The following parameters are imposed by the ORM `OAuth2TokenMixin` taken from the Authlib but they may be
+        eliminated with a new mixin...
+        :param scope:  The scope for which the refresh token has been issued
+        :param access_token: The access token with which the refresh token has been issued
+        :param expires_in: The expiry for the access/refresh token
         '''
         rtoken = OAuth2RefreshToken(user_id=User.query.filter_by(username=username).first().username)
         rtoken.refresh_token = refresh_token
@@ -54,20 +61,31 @@ class TokenManager():
 
 
 
-  #TODO: The refresh tokens can also or be invalidated, we need to look at there : https://stackoverflow.com/questions/40555855/does-the-refresh-token-expire-and-if-so-when
+
     def revokeRefreshToken(self, refToken):
-        print("IMPLEMENT THIS...")
-        return True
+        '''
+            #TODO: The refresh tokens can also or be invalidated, we need to look at there :
+            https://stackoverflow.com/questions/40555855/does-the-refresh-token-expire-and-if-so-when
+        '''
+        raise NotImplementedError()
+
 
 
 
 
 class SciTokenServer():
+    '''
+    This is the core class to handle the generation, serialization/deserialization and revocation of scitokens.
+    '''
 
     # NOTE: The ideas behind the separate Validator in this library is taken from libmacaroons.
     def __init__(self, keygen_method, ref_token_url, issuer='https://localhost'):
         '''
-        :param keygen_method: The key generation method that will be used.
+        The constructor for the ScitokenServer class
+
+        :param int keygen_method: Key generation method that will be used.
+        :param str ref_token_url: Refresh token validation URL
+        :param str issuer: Issuer of the "scitoken"
         '''
         self.VALIDATE_REFTOKEN_URL = ref_token_url
         if keygen_method == 1:
@@ -76,17 +94,19 @@ class SciTokenServer():
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PublicFormat.SubjectPublicKeyInfo
             )
-        elif keygen_method == 2: #TODO : To be implemented
-            self._private_key = self._genKeyPairWithOpenSSL(file)
-            self.public_key_pem = None
+        elif keygen_method == 2:
+            raise NotImplementedError()
+            # self._private_key = self._genKeyPairWithOpenSSL(file)
+            # self.public_key_pem = None
         self.issuer = issuer
 
 
 
     def _genKeyPairWithCryptLib(self):
         '''
-        Generate private key
-        :return:
+        Generate private key with the cryptography library
+        :return: Generates a new 2048 bit RSA private key using the default backend
+        :rtype RSAPrivateKey object
         '''
         return generate_private_key(
             public_exponent=65537,
@@ -94,24 +114,27 @@ class SciTokenServer():
             backend=default_backend()
         )
 
-    # TODO: This is incomplete.
-    # NOTE : https://stackoverflow.com/questions/89228/calling-an-external-command-in-python
-    def _genKeyPairWithOpenSSL(self, key_file):
-        # call the generate scripts
-        p = subprocess.Popen('generate_keys.sh '+key_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in p.stdout.readlines():
-            print(line)
-        #retval = p.wait()
+
+
+    # def _genKeyPairWithOpenSSL(self, key_file):
+    #     # call the generate scripts
+    #     p = subprocess.Popen('generate_keys.sh '+key_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    #     for line in p.stdout.readlines():
+    #         print(line)
+    #     #retval = p.wait()
 
 
 
     def generate_scitoken(self, parent_token = None, refresh_token = None, claims = None):
         '''
-        :param parent_token: The parent token for the new SciToken.
-        :param refresh_token: The refresh token that will be used to generate the Scitoken
-        :return: Scitoken
+        This is the principal method that generates a scitoken.
+        TODO : Note that Python implementation does not support parent tokens (i.e. hierarchies) yet.
+
+        :param parent_token: Parent token for the new SciToken.
+        :param refresh_token: Refresh token that will be used to generate the Scitoken
+        :param claims: The set of claims that will added (through update) to the scitoken
+        :return: scitoken
         '''
-        # TODO : Python implementation does not support parent tokens (i.e. hierarchies) yet.
         payload = {'refresh_token': refresh_token}
         r = requests.post(self.VALIDATE_REFTOKEN_URL, data=payload, verify=False)
         if r.json()['result']:
@@ -127,23 +150,68 @@ class SciTokenServer():
 
 
     def deserialize(self, serializedtoken):
+        '''
+        Deserialization of a serialized scitoken. This is decoding of the JWT underlying the
+        scitoken.
+
+        :param serializedtoken: Serialized token
+        :return: Deserialized token
+        '''
         return scitokens.SciToken.deserialize(serialized_token= serializedtoken, public_key=self.public_key_pem)
 
     def revoke_scitoken(self,token):
-        # TODO : TO BE IMPLEMENTED
-        return False  # self.validator.validate(token)
+        raise NotImplementedError()
+        #return False  # self.validator.validate(token)
 
 
 
 
 
 class SciTokenEnforcer():
+    '''
+    The class to handle enforcement and validation scitokens.
+
+    The enforcer object is instantiated with the issuer and it creates a Validator object
+    to which validator functions can be added. Similarly, the scope of the enforcer can be narrowed
+    down to a specific audience. For instance scitokens.Enforcer("https://scitokens.org/dteam", audience="https://example.com")
+    will accept only the tokens for the requests addressed to services of "https://example.com"
+    '''
+
 
     def __init__(self):
         pass
 
 
+    def generateEnforcer(self, issuer, aud=None, validators = None):
+        '''
+        Generates a Scitoken enforcer.
+
+        :param issuer: Issuer of the scitokens.
+        :param aud: Audience for the scitokens (similar to JWT audience : 'aud' claim identifies the
+        recipients that the JWT is intended for)
+        :param validators:
+        :return: An enforcer object for the specified issuer.
+        :rtype: Enforcer object
+        '''
+        self.enf = scitokens.Enforcer(issuer=issuer, audience=aud)
+        if validators is not None:
+            for claim, validator in validators:
+                self.enf.add_validator(claim, validator)
+        return self.enf
+
+
+
     def enforceToken(self, token, action, resource, public_pem):
+        '''
+
+        :param token: Scitoken used for access
+        :param action: Action to be performed, this needs to be one of the values of the
+        'scp' claim (that is {read, write, execute,queue})
+        :param resource: Identifier for the protected resource
+        :param public_pem: Public key is necessary to deserialize the scitoken before testing
+        :return: {True or False}
+        :rtype: bool
+        '''
         #serialized_token = token.serialize(issuer="local")
         try:
             stoken = scitokens.SciToken.deserialize(token, public_key=public_pem, insecure=True)
@@ -155,87 +223,30 @@ class SciTokenEnforcer():
 
 
 
-    ###########################
-    ####  ENFORCE SCITOKEN
-    ###########################
-    # The enforcer object is instantiated with the issuer and it creates a Validator object
-    # to which validator functions can be added
-    # Similarly, the scope of the enforcer can be narrowed down to a specific audience
-    # For instance scitokens.Enforcer("https://scitokens.org/dteam", audience="https://example.com")
-    # will accept only the tokens for the requests addressed to services of "https://example.com"
-    def generateEnforcer(self, issuer, aud=None, validators = None):
-        '''
-        Generate an enforcer that will be used for the enforcement of tokens.
-        :param issuer: The issuer of the scitokens.
-        :return: An enforcer object for the specified issuer.
-        '''
-        self.enf = scitokens.Enforcer(issuer=issuer, audience=aud)
-        if validators is not None:
-            for claim, validator in validators:
-                self.enf.add_validator(claim, validator)
-        return self.enf
-
-
-
-
-    ###########################
-    ####  VALIDATE SCITOKEN
-    ###########################
-    # Validation is determining whether the claims of the token are satisfied in a given context.
-    # To validate a specific claim, provide a callback function (below) to the Validator object
     def validate_scp(self,token):
         '''
+        Validation is determining whether the claims of the token are satisfied in a given context.
+        To validate a specific claim, provide a callback function (see below an example) to the Validator object
+
         :param token: The scitoken to be validated.
         :return: True or False
         '''
+        #Add additional checks here...
         return self.validator.validate(token)
 
 
-    ###########################
-    ####  VERIFY SCITOKEN
-    ###########################
-    # verification refers to determining the integrity and authenticity of the token:
-    # - Can we validate the token came from a known source without tampering?
-    # - Can we validate the chain of trust?
+    # def validate_NEW_CLAIM(value):
+    #     return value == True
+
+
     def verify_token(self,token):
         '''
-        :param token: The scitoken to be verified : This means that the integrity and authenticity of the token
-        will be checked
+        Verification refers to determining the integrity and authenticity of the token:
+        - Can we validate the token came from a known source without tampering?
+        - Can we validate the chain of trust?
+
+        :param token: The scitoken to be verified
         :return: True or False
         '''
         return self.validator.validate(token)
-
-
-
-
-
-
-
-
-
-########################################################################
-
-
-
-
-    # To validate a specific claim, provide a callback function (below) to the Validator object
-    def validate_NEW_CLAIM(value):
-        return value == True
-
-
-    # This is JWT generation taken from Scitoken Github page which is in return taken from Codacy...
-    # TBD...
-    def generateJWTToken(self):
-        SciTokenServer.generateKeyPair(self, "sample_ecdsa_keypair.pem")
-        with open("sample_ecdsa_keypair.pem", "r") as file_pointer:
-            serialized_pair = file_pointer.read()
-
-        loaded_public_key = serialization.load_pem_public_key(
-            serialized_pair,
-            backend=default_backend()
-        )
-        # Generate a scitoken
-        token = scitokens.SciToken()
-        return token
-
 

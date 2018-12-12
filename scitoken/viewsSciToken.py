@@ -150,7 +150,7 @@ def generateAccessSciToken():
 
 
 @scitoken_bp.route('/resource', methods=['GET', 'POST'])
-def verifyToken():
+def enforceToken():
     ''' Enforcement method for scitoken-based accesses
 
     :param: str token : Scitoken used for access
@@ -179,6 +179,9 @@ def validateToken():
 @scitoken_bp.errorhandler(401)
 def page_not_found(e):
     return Response('<p>Login failed</p>')
+
+
+
 
 
 
