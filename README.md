@@ -17,19 +17,29 @@ git clone https://github.com/fturkmen/example-oauth2-server.git
 Based on the following excerpt from [Refresh Tokens proposal] (https://scitokens.org/scitokens-proposal-public.pdf), the refresh tokens need to be stored locally within the library itself :  
 > Users authenticate with identity tokens to submit jobs/workflows, but identity tokens do not travel along with the jobs. Instead, at job submission time the Token Manager obtains OAuth refresh tokens with needed data access privileges from Token Servers. The Token Manager securely stores these relatively long-lived refresh tokens locally, then uses them to obtain short-lived access tokens from the Token Server when needed (e.g., when jobs start or when access tokens for running jobs near expiration). The Scheduler then sends the short-lived access tokens to the jobs, which the jobs use to access remote data.
 
-Based on this, we can infer that there is a refresh token either per user or per job (even though the former is more likely). One could also map a client (or a user) to a single refresh token in different scenarios which is exactly how it is done in Scitoken Web library. 
+Based on this, we can infer that there is a refresh token either per user or per job (even though the former is more likely). One could also map a (OAuth2) client to a single refresh token in different scenarios. In the current implementation of the Scitoken Web library, each user has a refresh token. 
 
-Client ID | Refresh Token
+User ID | Refresh Token
 ------------ | -------------
 12345 | Job's/User's refresh token
 
-The SciToken library mimics/employs the example OAuth2 server's mixins to generate a storage for the refresh token. The storage configuration is available in **app.py** and the mappings are provided in **models.py**. By default, the refresh tokens are stored in a SQLAlchemy database.  
+The SciToken library mimics/employs the example OAuth2 server's mixins to generate a storage for the refresh token. The storage configuration is available in **app.py** and the mappings are provided in **models.py**. By default, the refresh tokens are stored in a SQLAlchemy database. The use of `OAuth2TokenMixin` has benefits such as easy integration with OAuth2 server and reuse but also limitations such as unnecessary fields for *refresh tokens* such as scope or access_token. 
+
+ 
 
 ## API EndPoints
-In the demo, there is a simple API to generate, validate, consume and revoke scitokens. The endpoints for the SciToken demo are shown in the `SciTokenAPI.yaml` file.
+In the demo, there is a simple API to generate, validate, consume and revoke scitokens. The endpoints for the SciToken demo are shown in the `SciTokenAPI.yaml` file. 
 
 ## Build and Deployment
-Deployment of the Oauth2 server is done through container. You first need to build it:
+
+
+### Running Scitoken Server
+Since the library is a Flask application and the motivation is just to build a running example, the library is run through `flask run`. Obviously there are better ways for scalability and so on (see the ToDo list below).
+
+
+
+### OAuth2 Server
+Deployment of the Oauth2 server is done through a container. You first need to build it:
 
 ```bash
 docker build -t oauth2server:latest -f Dockerfile_Oauth2Server .
@@ -48,7 +58,14 @@ docker run --detach \
 ```
 
 # Demo
-Here are the steps for running the Scitoken Web library demo.
+There is a simple demo to showcase the use of Scitokens. It is basically a list of HTML pages that show various flow to:
+
+* Obtain a refresh token from the OAuth2 server after giving consent
+* Obtain a Scitoken by using the Refresh token and use that for access to a resource (i.e. identified with a resource id)
+
+There are also supporting functionalities such as user management (i.e. registration, login, logout) and token forms for standalone functionality but they are just different pieces put together with a stylesheet from the Internet.
+
+
 
 ## Running 
 The Scitoken Web library demo is configured with the `app.py` file. 
@@ -69,7 +86,7 @@ Authentication screen authenticates the user.
 - [ ] Example URL resource to be protected by the scitoken.
 - [ ] The revocation of refresh tokens and scitokens
 - [ ] Certificate validation during refresh token fetch (`verify=True` for certificate validation in ***generateOAuth2()*** method)
-- [ ] The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has expires_in etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
+- [ ] The OAuth2TokenMixin does not meet refresh token data structure (see the class `OAuth2TokenMixin` in a ***sqla.py***), it has `expires_in` etc. (more suitable for OAuth2 access tokens) -> create a new mixin specific for refresh tokens.
 - [ ] Instead of `flask run` employ WSGI 
 - [ ] Implement a decorator like `require_auth` of Oauth2 example implementation for Scitokens.
 - [ ] A proper storage (e.g. database) from SQLAlchemy local data store

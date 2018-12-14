@@ -149,7 +149,7 @@ def generateAccessSciToken():
 
 
 
-@scitoken_bp.route('/resource', methods=['GET', 'POST'])
+@scitoken_bp.route('/resource', methods=['POST'])
 def enforceToken():
     ''' Enforcement method for scitoken-based accesses
 
