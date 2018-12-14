@@ -1,13 +1,13 @@
 # SciToken Web Library
 This demo has been built by using the Python version of the [Scitoken library](https://github.com/scitokens/scitokens). The current version of the library does not have OAuth2 server embedded. In order to run the Scitoken demo, you need an OAuth2 server that can issue `refresh tokens`. 
 
-For the purposes of this demo, we used: 
+For the purposes of this work, we used: 
 
 * [Authlib](https://authlib.org/), an OAuth2 server 
 * A fork of the [example OAuth2 server](https://github.com/fturkmen/example-oauth2-server) built by using authlib. The fork merely adds an interface fo verifying the validity of refresh tokens.  
 
 ## Requirements
-Before running the demo, clone the OAuth2 server fork (feel free to put this to your own Dockerfile): 
+Before running the server (that provides a frontend for the library), clone the OAuth2 server fork (feel free to put this to your own Dockerfile): 
 
 ```bash
 git clone https://github.com/fturkmen/example-oauth2-server.git
@@ -28,15 +28,11 @@ The SciToken library mimics/employs the example OAuth2 server's mixins to genera
  
 
 ## API EndPoints
-In the demo, there is a simple API to generate, validate, consume and revoke scitokens. The endpoints for the SciToken demo are shown in the `SciTokenAPI.yaml` file. 
+The library allows simple operations to generate, validate and consume scitokens. The endpoints for the SciToken demo are shown in the `SciTokenAPI.yaml` file. 
+
+**IMPORTANT: The endpoint that handles the OAuth2 flow for obtaining refresh tokens is `oauth2RefreshToken`**. So when you provide the `redirect_uri` parameter during OAuth2 registration bear this in mind.
 
 ## Build and Deployment
-
-
-### Running Scitoken Server
-Since the library is a Flask application and the motivation is just to build a running example, the library is run through `flask run`. Obviously there are better ways for scalability and so on (see the ToDo list below).
-
-
 
 ### OAuth2 Server
 Deployment of the Oauth2 server is done through a container. You first need to build it:
@@ -57,6 +53,18 @@ docker run --detach \
            oauth2server
 ```
 
+
+### Running Scitoken Server
+Since the library is a Flask application and the motivation is just to build a running example, the library is run through `flask run`. Obviously there are better ways for scalability and so on (see the ToDo list below). 
+
+For instance, in order to run the server (on `localhost` at `4006`), just run the following at the level of `app.py` :
+
+```bash
+flask run --host=127.0.0.1 --port=4006
+```
+
+
+
 # Demo
 There is a simple demo to showcase the use of Scitokens. It is basically a list of HTML pages that show various flow to:
 
@@ -76,11 +84,10 @@ Here are several notes that could be important to keep in mind:
 * The sessions in flask (not the extensions) are cookie-based which, IMO, makes the development more difficult. That said, it also makes the production/deployment easy along with possible additional benefits. In order to run the scitoken code together with Oauth2 server locally, I needed to set a different `SESSION_COOKIE_NAME` for each application. See `app.py` for both. This is irrelevant if both servers are run on different domains.
 
 
-Authentication screen authenticates the user.
-
 
 
 # TODOs
+- [ ] Implement the `revoke` functionality for the scitokens.
 - [ ] Solve the misconfiguration of `logout` method between Scitoken library and OAuth2 server 
 - [ ] Implement Validator, Verifier and Enforcer for scitoken. 
 - [ ] Example URL resource to be protected by the scitoken.
@@ -102,4 +109,4 @@ Authentication screen authenticates the user.
 - [ ] The cases of revoked scitoken and/or refresh tokens work?  
  
 # References and Further Reading
-The Scitoken implementation is based on Authlib.
+The Scitoken implementation is based on Authlib. 
