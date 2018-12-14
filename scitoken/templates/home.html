@@ -1,0 +1,100 @@
+<!doctype html>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+
+{% if user %}
+<style>pre{white-space:wrap}</style>
+<div>Logged in as <strong>{{user}}</strong> (<a href="{{ url_for('scitoken.logOut') }}">Log Out</a>)</div>
+
+<br><a href="https://127.0.0.1:4005/create_client">Create OAuth2 Client</a>
+
+
+<hr>
+    <div>Get a refresh token <a href="{{ url_for('scitoken.refresh_token_form') }}">here</a></div>
+
+    <div class="login-form">
+
+        <div class="control-group">
+            <textarea rows="4" cols="50" type="text" class="login-field-icon fui-user" placeholder="Refresh token will appear here" name="refreshtoken">{% if refresh_token %}{{ refresh_token }}{% else %}Here you will see your refresh token{% endif %}</textarea>
+            <label class="login-field-icon fui-user" for="refreshtoken"></label>
+        </div>
+    </div>
+
+<hr>
+    <div>Get a scitoken <a href="{{ url_for('scitoken.scitoken_form') }}">here</a></div>
+    <div class="login-form">
+
+        <div class="control-group">
+            <textarea rows="4" cols="50" type="text" class="login-field-icon fui-user" placeholder="Scitoken will appear here" name="scitoken">{% if scitoken %}{{ scitoken }}{% else %}Here you will see your scitoken {% endif %}</textarea>
+            <label class="login-field-icon fui-user" for="scitoken"></label>
+        </div>
+    </div>
+
+ <hr>
+
+<div>Use a scitoken below</div>
+<form action="{{ url_for('scitoken.verifyToken') }}"  method="POST">
+	<div class="login">
+		<div class="login-screen">
+
+			<div class="login-form">
+	         <div class="control-group">
+                <textarea rows="4" cols="40" type="text" class="login-field-icon fui-user" placeholder="Put your Scitoken here" name="token">{% if scitoken %}{{ scitoken.decode('UTF-8') }}{% else %}Here you will see your scitoken {% endif %}</textarea>
+                <label class="login-field-icon fui-user" for="token"></label>
+            </div>
+
+                <div class="control-group">
+                    <label class="login-field-icon fui-user" for="username">Action</label>
+				    <input type="text" class="login-field" placeholder="act" name="act" value="read">
+				</div>
+
+            				<div class="control-group">
+                    <label class="login-field-icon fui-user" for="id">Resource ID</label>
+				    <input type="text" class="login-field" placeholder="id" name="id" value="/home/other/test_file">
+				</div>
+
+                <input type="submit" value="Access to Resource" class="btn btn-primary btn-large btn-block" >
+			    <br>
+			</div>
+		</div>
+	</div>
+</form>
+
+ <hr>
+
+
+<div>Revoke the token</div>
+<form action="{{ url_for('scitoken.verifyToken') }}"  method="POST">
+	<div class="login">
+		<div class="login-screen">
+
+			<div class="login-form">
+	         <div class="control-group">
+                <textarea rows="4" cols="40" type="text" class="login-field-icon fui-user" placeholder="Put your Scitoken here" name="token">{% if scitoken %}{{ scitoken.decode('UTF-8') }}{% else %}Scitoken to be revoked{% endif %}</textarea>
+                <label class="login-field-icon fui-user" for="token"></label>
+            </div>
+
+                <input type="submit" value="Revoke" class="btn btn-primary btn-large btn-block" >
+			    <br>
+			</div>
+		</div>
+	</div>
+</form>
+{#<div>Go to OAuth2 <a href="https://127.0.0.1:4005/">home (FIX THIS!)</a></div>#}
+{##}
+{##}
+{#<div>The list of OAuth2 client for  <strong>{{user}}</strong></div>#}
+{#{% for client in clients %}#}
+{#<pre>#}
+{#{{ client.client_info|tojson }}#}
+{#{{ client.client_metadata|tojson }}#}
+{#</pre>#}
+{#<hr>#}
+{#{% endfor %}#}
+
+
+{% else %}
+<form action="" method="post">
+  <input type="text" name="username" placeholder="username">
+  <button type="submit">Login / Signup</button>
+</form>
+{% endif %}

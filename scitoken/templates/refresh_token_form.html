@@ -1,0 +1,45 @@
+<!doctype html>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+{% block body %}
+{% if user %}
+
+<form action="{{ url_for('scitokentm.generateOAuth2') }}"  method="POST">
+	<div class="login">
+		<div class="login-screen">
+			<div class="app-title">
+				<h1>Refresh Token Form</h1>
+			</div>
+
+			<div class="login-form">
+				<div class="control-group">
+                    <label class="login-field-icon fui-user" for="username">Username</label>
+				    <input type="text" class="login-field" placeholder="username" name="username" value="{{ user.username }}">
+				</div>
+
+                <div class="control-group">
+                    <label class="login-field-icon fui-user" for="redirect_uri">Redirect URI (Used during client generation)</label>
+				    <input type="text" class="login-field" value="{{ url_for('scitoken.home',_external=True) }}" placeholder="redirect_uri" name="redirect_uri">
+				</div>
+
+{#                <div class="control-group">#}
+{#                    <label class="login-field-icon fui-user" for="login-name">Authorization Code</label>#}
+{#				    <input type="text" class="login-field" value="" placeholder="authz_code" name="authz_code">#}
+{#				</div>#}
+
+                <div class="control-group">
+                    <label class="login-field-icon fui-user" for="oauth2_srvname">OAuth2 Provider</label>
+                    <select name="oauth2_srvname">
+                    <option selected="selected">Local</option>
+                    <option>Twitter (Not working)</option>
+                </select>
+                </div>
+
+                <input type="submit" value="Get Refresh Token" class="btn btn-primary btn-large btn-block" >
+			    <br>
+			</div>
+		</div>
+	</div>
+</form>
+
+{% endif %}
+{% endblock %}

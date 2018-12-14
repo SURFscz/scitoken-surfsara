@@ -1,0 +1,41 @@
+<!doctype html>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
+{% block body %}
+{% if session['logged_in'] %}
+<p>You're logged in already!</p>
+{% else %}
+
+
+<form action="{{ url_for('scitoken.home') }}" +  method="POST">
+	<div class="login">
+		<div class="login-screen">
+			<div class="app-title">
+				<h1>Scitoken Form</h1>
+			</div>
+
+			<div class="login-form">
+				<div class="control-group">
+				<input type="text" class="login-field" placeholder="refresh_token" name="refresh_token"
+                       {% if refresh_token %}
+                       value="{{ refresh_token }}"
+                       {% else %}
+                       value=""
+                       {% endif %}
+                >
+				<label class="login-field-icon fui-user" for="refresh_token"></label>
+				</div>
+                <div class="control-group">
+                    <label class="login-field-icon fui-user" for="scope">Claim (scp)</label>
+				    <input type="text" class="login-field" placeholder="scope" name="scope" value="read:/home/other/test_file">
+				</div>
+
+
+                <input type="submit" value="Get Scitoken" class="btn btn-primary btn-large btn-block" >
+			    <br>
+			</div>
+		</div>
+	</div>
+</form>
+
+{% endif %}
+{% endblock %}
